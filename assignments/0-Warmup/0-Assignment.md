@@ -23,19 +23,22 @@ Please provide answers to these questions using markdown notation and place them
 
     - [ ] drexel's tux cluster
     - [ ] WSL on Windows
-    - [ ] Orbstack on MacOs
+    - [x] Orbstack on MacOs
     - [ ] VMWare Fusion
     - [ ] Somthing else (put name here)
 
 2. I have installed my virtual machine, tested it, feel comfortable using it, and validated that the required software is installed:
 
-    - [ ] YES
+    - [x] YES
     - [ ] N/A - I plan to use tux
     - [ ] NO - Not Yet
 
 
 3. Please provide a link to the repository you are using for this class.
+https://github.com/channacy/SysProg-Class
 
 4. Briefly describe what you want to get out of this class.
+After the class, I hope to gain understanding of working with Lunix/Unix environment in terms of how a compiler is built and runs. Moreover, I would like to gain experience writing basic network programs and how containers are used in software development projects.
 
 5. Briefly describe any concerns you might be having with being successful in this class (if any).
+There are no major concerns and I plan to go to professor or TA office hours for any questions regarding homework assignments.
