@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <ctype.h>
 
 #define BUFFER_SZ 50
 
@@ -17,7 +17,25 @@ int  count_words(char *, int, int);
 
 int setup_buff(char *buff, char *user_str, int len){
     //TODO: #4:  Implement the setup buff as per the directions
-    return 0; //for now just so the code compiles. 
+    // return 0; //for now just so the code compiles. 
+    int length = 0;
+    while (str[length] != '\0') {
+        length++;
+    }
+
+    if (length > len) {
+        return -1  // return -1 if length of user_str is too large
+    }
+
+    for (int i = 0; i < length; i++) {
+        memcpy(buff + i, user_str + 1, 1);
+    }
+
+    buff[length] = '\0'; // terminated by '\0'
+
+    // return -2 for any other error (add error condition)
+
+    return length; //return length of user input string if there are no errors
 }
 
 void print_buff(char *buff, int len){
@@ -34,8 +52,20 @@ void usage(char *exename){
 }
 
 int count_words(char *buff, int len, int str_len){
+    // Arguments: (a)a pointer to the buffer, (b) the length of the buffer, and (c)the length of the user supplied string
     //YOU MUST IMPLEMENT
-    return 0;
+    int word_count = 0;
+    int inside_word = 0;
+
+    for (int i = 0; i < str_len; i++) {
+        if (isspace(buff[i])) {
+            in_word = 0;
+        } else if (!in_word) {
+            in_word = 1;
+            word_count++;
+        }
+    }
+    return word_count;
 }
 
 //ADD OTHER HELPER FUNCTIONS HERE FOR OTHER REQUIRED PROGRAM OPTIONS
@@ -49,7 +79,8 @@ int main(int argc, char *argv[]){
     int  user_str_len;      //length of user supplied string
 
     //TODO:  #1. WHY IS THIS SAFE, aka what if arv[1] does not exist?
-    //      PLACE A COMMENT BLOCK HERE EXPLAINING
+    // The first condition checks to see if there is 1 command line argument and the second condition accesses the first argument's value 
+    // to see if it is equal to the character '-.' It is safe because if arv[1] did not exist, both conditions would be false.
     if ((argc < 2) || (*argv[1] != '-')){
         usage(argv[0]);
         exit(1);
@@ -66,7 +97,7 @@ int main(int argc, char *argv[]){
     //WE NOW WILL HANDLE THE REQUIRED OPERATIONS
 
     //TODO:  #2 Document the purpose of the if statement below
-    //      PLACE A COMMENT BLOCK HERE EXPLAINING
+    //  The if conditional checks to see if there were at most two given command-line arguments.
     if (argc < 3){
         usage(argv[0]);
         exit(1);
@@ -78,7 +109,11 @@ int main(int argc, char *argv[]){
     //          handle error if malloc fails by exiting with a 
     //          return code of 99
     // CODE GOES HERE FOR #3
-
+    buff = (int*) malloc(BUFFER_SZ * sizeof(int)); 
+    // If malloc fails
+    if (buffer == NULL) {
+        return 99; 
+    }
 
     user_str_len = setup_buff(buff, input_string, BUFFER_SZ);     //see todos
     if (user_str_len < 0){
@@ -104,6 +139,7 @@ int main(int argc, char *argv[]){
     }
 
     //TODO:  #6 Dont forget to free your buffer before exiting
+    free(buff);
     print_buff(buff,BUFFER_SZ);
     exit(0);
 }
