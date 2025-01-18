@@ -9,31 +9,43 @@
 void usage(char *);
 void print_buff(char *, int);
 int  setup_buff(char *, char *, int);
-
 //prototypes for functions to handle required functionality
 int  count_words(char *, int, int);
 //add additional prototypes here
 
-
 int setup_buff(char *buff, char *user_str, int len){
+    if (!buff || len <= 0) {
+        return -2;  // return -2 for any other error (add error condition)
+    }
     //TODO: #4:  Implement the setup buff as per the directions
     // return 0; //for now just so the code compiles. 
     int length = 0;
-    while (str[length] != '\0') {
-        length++;
+    int space_flag = 0;
+    while (*user_str != '\0') {
+        if (length > len) {
+            return -1; // length of user string is longer than available buffer size
+        }
+        if (*user_str == ' ' || *user_str == '\t') {
+            if (!space_flag) {
+                *buff = ' ';
+                space_flag = 1;
+                length++;
+                buff++;
+            }
+        } 
+        else {
+            *buff = *user_str;
+            space_flag = 0;
+            length++;
+            buff++;
+        }
+        user_str++;
     }
-
-    if (length > len) {
-        return -1  // return -1 if length of user_str is too large
+    
+    for (int i = length + 1; i <= len; i++) {
+        *buff = '.';
+        buff++;
     }
-
-    for (int i = 0; i < length; i++) {
-        memcpy(buff + i, user_str + 1, 1);
-    }
-
-    buff[length] = '\0'; // terminated by '\0'
-
-    // return -2 for any other error (add error condition)
 
     return length; //return length of user input string if there are no errors
 }
@@ -51,20 +63,27 @@ void usage(char *exename){
 
 }
 
-int count_words(char *buff, int len, int str_len){
+int count_words(char *buff, int len, int str_len) {
     // Arguments: (a)a pointer to the buffer, (b) the length of the buffer, and (c)the length of the user supplied string
     //YOU MUST IMPLEMENT
     int word_count = 0;
-    int inside_word = 0;
-
+    int word_start = 0;
     for (int i = 0; i < str_len; i++) {
-        if (isspace(buff[i])) {
-            in_word = 0;
-        } else if (!in_word) {
-            in_word = 1;
-            word_count++;
+        if (!word_start)
+        {
+            if (!(isspace(*buff))){
+                word_count++;
+                word_start = 1;
+            }
         }
+        else {
+            if (isspace(*buff)){
+                word_start = 0;
+            }
+        }
+        buff++;
     }
+    
     return word_count;
 }
 
@@ -79,8 +98,8 @@ int main(int argc, char *argv[]){
     int  user_str_len;      //length of user supplied string
 
     //TODO:  #1. WHY IS THIS SAFE, aka what if arv[1] does not exist?
-    // The first condition checks to see if there is 1 command line argument and the second condition accesses the first argument's value 
-    // to see if it is equal to the character '-.' It is safe because if arv[1] did not exist, both conditions would be false.
+    // The first condition checks to see if there is 1 or 0 command line arguments and the second condition accesses the first argument's value 
+    // to see if it is equal to the character '-.' It is safe because if arv[1] did not exist and did not equal "-", both conditions would be false.
     if ((argc < 2) || (*argv[1] != '-')){
         usage(argv[0]);
         exit(1);
@@ -109,9 +128,9 @@ int main(int argc, char *argv[]){
     //          handle error if malloc fails by exiting with a 
     //          return code of 99
     // CODE GOES HERE FOR #3
-    buff = (int*) malloc(BUFFER_SZ * sizeof(int)); 
+    buff = malloc(BUFFER_SZ * sizeof(char));
     // If malloc fails
-    if (buffer == NULL) {
+    if (buff == NULL) {
         return 99; 
     }
 
@@ -120,6 +139,7 @@ int main(int argc, char *argv[]){
         printf("Error setting up buffer, error = %d", user_str_len);
         exit(2);
     }
+    printf("Length of user string %d\n", user_str_len);
 
     switch (opt){
         case 'c':
@@ -130,17 +150,22 @@ int main(int argc, char *argv[]){
             }
             printf("Word Count: %d\n", rc);
             break;
-
+        case 'r':
+            break;
+        case 'w':
+            break;
+        case 'x':
+            break;
         //TODO:  #5 Implement the other cases for 'r' and 'w' by extending
         //       the case statement options
         default:
             usage(argv[0]);
             exit(1);
     }
+    print_buff(buff,BUFFER_SZ);
 
     //TODO:  #6 Dont forget to free your buffer before exiting
     free(buff);
-    print_buff(buff,BUFFER_SZ);
     exit(0);
 }
 
