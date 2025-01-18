@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #define BUFFER_SZ 50
 
@@ -10,8 +11,10 @@ void usage(char *);
 void print_buff(char *, int);
 int  setup_buff(char *, char *, int);
 //prototypes for functions to handle required functionality
-int  count_words(char *, int, int);
+int  count_words(char *, int);
 //add additional prototypes here
+void reverse_string(char *, int);
+void word_print(char *, int);
 
 int setup_buff(char *buff, char *user_str, int len){
     if (!buff || len <= 0) {
@@ -51,10 +54,11 @@ int setup_buff(char *buff, char *user_str, int len){
 }
 
 void print_buff(char *buff, int len){
-    printf("Buffer:  ");
+    printf("Buffer: [");
     for (int i=0; i<len; i++){
         putchar(*(buff+i));
     }
+    printf("]");
     putchar('\n');
 }
 
@@ -63,11 +67,11 @@ void usage(char *exename){
 
 }
 
-int count_words(char *buff, int len, int str_len) {
+int count_words(char *buff, int str_len) {
     // Arguments: (a)a pointer to the buffer, (b) the length of the buffer, and (c)the length of the user supplied string
     //YOU MUST IMPLEMENT
     int word_count = 0;
-    int word_start = 0;
+    bool word_start = 0;
     for (int i = 0; i < str_len; i++) {
         if (!word_start)
         {
@@ -88,6 +92,63 @@ int count_words(char *buff, int len, int str_len) {
 }
 
 //ADD OTHER HELPER FUNCTIONS HERE FOR OTHER REQUIRED PROGRAM OPTIONS
+void reverse_string(char *buff, int str_len) {
+    char* start = buff;
+    char* end = buff + str_len - 1;
+
+    while (start < end) {
+        char temp = *start;
+        *start = *end;
+        *end = temp;
+
+        start++;
+        end--;
+    }
+}
+
+void  word_print(char *buff, int str_len) {
+    int last_char_idx = str_len - 1;  //index of last char - strlen(str)-1;
+    int wc = 0; //counts word
+    int wlen = 0;       //length of current word
+    bool word_start = 0;  //am I at the start of a new word
+    for (int i = 0; i < str_len; i++)
+    {
+        if (!word_start)
+        {
+            if (isspace(*buff)) {
+                printf(" (%d)\n", wlen);
+                word_start = 0;
+                wlen = 0;
+            }
+            else {
+                wc++;
+                word_start = 1;
+                wlen++;
+                printf("%d. ", wc);
+                printf("%c", *buff); 
+            }
+        }
+        else if (i == last_char_idx) {
+            wlen++;
+            printf("%c", *buff); 
+            printf(" (%d)\n", wlen);
+            word_start = 0;
+            wlen = 0;
+        }
+        else {
+            if (isspace(*buff)) {
+                printf(" (%d)\n", wlen);
+                word_start = 0;
+                wlen = 0;
+            }
+            else {
+                printf("%c", *buff); 
+                wlen++;
+            }
+        }
+        buff++;
+    }
+}
 
 int main(int argc, char *argv[]){
 
@@ -139,25 +200,28 @@ int main(int argc, char *argv[]){
         printf("Error setting up buffer, error = %d", user_str_len);
         exit(2);
     }
-    printf("Length of user string %d\n", user_str_len);
 
     switch (opt){
         case 'c':
-            rc = count_words(buff, BUFFER_SZ, user_str_len);  //you need to implement
+            rc = count_words(buff, user_str_len);  //you need to implement
             if (rc < 0){
                 printf("Error counting words, rc = %d", rc);
                 exit(2);
             }
             printf("Word Count: %d\n", rc);
             break;
+        //TODO:  #5 Implement the other cases for 'r' and 'w' by extending
+        //       the case statement options
         case 'r':
+            reverse_string(buff, user_str_len);
+            // printf("Reversed string: %s\n", buff);
             break;
         case 'w':
+            printf("Word Print\n----------\n");
+            word_print(buff, user_str_len);
             break;
         case 'x':
             break;
-        //TODO:  #5 Implement the other cases for 'r' and 'w' by extending
-        //       the case statement options
         default:
             usage(argv[0]);
             exit(1);
