@@ -239,4 +239,8 @@ int main(int argc, char *argv[]){
 //          is a good practice, after all we know from main() that 
 //          the buff variable will have exactly 50 bytes?
 //  
-//          PLACE YOUR ANSWER HERE
+//          It is good software engineering practice to pass in the pointer to memory and 
+//          how big the self contained part of memory is. This can assist in help avoid issues such
+//          as memory leaks in which memory is not freed when it is not needed any longer. Being able to 
+//          access the data in the buffer allows for efficient adding and modification of data without 
+//          having to create copies as well as being able to reuse the same buffer.
