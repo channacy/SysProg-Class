@@ -23,7 +23,7 @@ int setup_buff(char *buff, char *user_str, int len){
     //TODO: #4:  Implement the setup buff as per the directions
     // return 0; //for now just so the code compiles. 
     int length = 0;
-    int space_flag = 0;
+    int space_flag = 1;
     while (*user_str != '\0') {
         if (length > len) {
             return -1; // length of user string is longer than available buffer size
@@ -44,17 +44,28 @@ int setup_buff(char *buff, char *user_str, int len){
         }
         user_str++;
     }
-    
+
     for (int i = length + 1; i <= len; i++) {
         *buff = '.';
         buff++;
+    }
+
+    // move backwards to and replace any trailing spaces with .
+    while (true) {
+        buff --;
+        if (isspace(*buff)) {
+            *buff =  '.';
+        }
+        else if (!(isspace(*buff)) && (*buff != '.')) {
+            break;
+        }
     }
 
     return length; //return length of user input string if there are no errors
 }
 
 void print_buff(char *buff, int len){
-    printf("Buffer: [");
+    printf("Buffer:  [");
     for (int i=0; i<len; i++){
         putchar(*(buff+i));
     }
@@ -106,7 +117,7 @@ void reverse_string(char *buff, int str_len) {
     }
 }
 
-void  word_print(char *buff, int str_len) {
+void word_print(char *buff, int str_len) {
     int last_char_idx = str_len - 1;  //index of last char - strlen(str)-1;
     int wc = 0; //counts word
     int wlen = 0;       //length of current word
@@ -116,7 +127,7 @@ void  word_print(char *buff, int str_len) {
         if (!word_start)
         {
             if (isspace(*buff)) {
-                printf(" (%d)\n", wlen);
+                printf("(%d)\n", wlen);
                 word_start = 0;
                 wlen = 0;
             }
@@ -131,13 +142,13 @@ void  word_print(char *buff, int str_len) {
         else if (i == last_char_idx) {
             wlen++;
             printf("%c", *buff); 
-            printf(" (%d)\n", wlen);
+            printf("(%d)\n", wlen);
             word_start = 0;
             wlen = 0;
         }
         else {
             if (isspace(*buff)) {
-                printf(" (%d)\n", wlen);
+                printf("(%d)\n", wlen);
                 word_start = 0;
                 wlen = 0;
             }
@@ -148,6 +159,7 @@ void  word_print(char *buff, int str_len) {
         }
         buff++;
     }
+    printf("\nNumber of words returned: %d\n", wc);
 }
 
 int main(int argc, char *argv[]){
@@ -157,11 +169,13 @@ int main(int argc, char *argv[]){
     char opt;               //used to capture user option from cmd line
     int  rc;                //used for return codes
     int  user_str_len;      //length of user supplied string
+    char *word_to_replace;  //for replace command, the word to become replaced
+    char *new_word;        //for replace command, the word to replace the word_to_replace
 
     //TODO:  #1. WHY IS THIS SAFE, aka what if arv[1] does not exist?
     // The first condition checks to see if there is 1 or 0 command line arguments and the second condition accesses the first argument's value 
     // to see if it is equal to the character '-.' It is safe because if arv[1] did not exist and did not equal "-", both conditions would be false.
-    if ((argc < 2) || (*argv[1] != '-')){
+    if ((argc < 2) || (*argv[1] != '-')) {
         usage(argv[0]);
         exit(1);
     }
@@ -209,25 +223,31 @@ int main(int argc, char *argv[]){
                 exit(2);
             }
             printf("Word Count: %d\n", rc);
+            print_buff(buff,BUFFER_SZ);
             break;
         //TODO:  #5 Implement the other cases for 'r' and 'w' by extending
         //       the case statement options
         case 'r':
+            // Print reversed version of input string
             reverse_string(buff, user_str_len);
-            // printf("Reversed string: %s\n", buff);
+            print_buff(buff,BUFFER_SZ);
             break;
         case 'w':
+            // Print words and the each word's length 
             printf("Word Print\n----------\n");
             word_print(buff, user_str_len);
+            print_buff(buff,BUFFER_SZ);
             break;
         case 'x':
+            word_to_replace = argv[3];
+            new_word = argv[4];
+            printf("Not Implemented!\n");
             break;
         default:
             usage(argv[0]);
             exit(1);
     }
-    print_buff(buff,BUFFER_SZ);
-
+    // print_buff(buff,BUFFER_SZ);
     //TODO:  #6 Dont forget to free your buffer before exiting
     free(buff);
     exit(0);
