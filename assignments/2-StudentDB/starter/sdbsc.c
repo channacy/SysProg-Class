@@ -62,27 +62,29 @@ int open_db(char *dbFile, bool should_truncate)
  */
 int get_student(int fd, int id, student_t *s)
 {
+    // update file descriptor
     int offset = id * sizeof(student_t);
     lseek(fd, offset, SEEK_SET);
 
-    student_t possible_student;
-    unsigned char *buffer = malloc(STUDENT_RECORD_SIZE);
-    ssize_t bytes_read = read(fd, buffer, STUDENT_RECORD_SIZE);
+    student_t *pstudent;
+    pstudent = malloc(STUDENT_RECORD_SIZE);
+
+    ssize_t bytes_read = read(fd, pstudent, STUDENT_RECORD_SIZE);
     if (bytes_read == -1) {
         return ERR_DB_FILE;
     }
 
-    if (memcmp(buffer, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) == 0) {
+    if (memcmp(pstudent, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) == 0) {
         return SRCH_NOT_FOUND;
     }
 
-    memcpy(&possible_student, buffer, STUDENT_RECORD_SIZE);
-
     // Copy possible student data to pointer s
-    s->id = possible_student.id;
-    s->gpa = possible_student.gpa;
-    strcpy(s->fname, possible_student.fname);
-    strcpy(s->lname, possible_student.lname);
+    s->id = pstudent->id;
+    s->gpa = pstudent->gpa;
+    strcpy(s->fname, pstudent->fname);
+    strcpy(s->lname, pstudent->lname);
+    
+    free(pstudent);
     return NO_ERROR;
 }
 
@@ -118,18 +120,20 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
     lseek(fd, offset, SEEK_SET);
 
     // check if a student already exists at that location
-    unsigned char *buffer = malloc(STUDENT_RECORD_SIZE);
-    ssize_t bytes_read = read(fd, buffer, STUDENT_RECORD_SIZE);
+    student_t *pstudent;
+    pstudent = malloc(STUDENT_RECORD_SIZE);
+    ssize_t bytes_read = read(fd, pstudent, STUDENT_RECORD_SIZE);
     if (bytes_read == -1) {
         printf(M_ERR_DB_READ);
         return ERR_DB_FILE;
     }
 
-    if (memcmp(buffer, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
+    if (memcmp(pstudent, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
         printf(M_ERR_DB_ADD_DUP, id);
         return ERR_DB_OP;
     }
 
+    free(pstudent);
     // create new student and write to database
     student_t new_student;
     new_student.id = id;
@@ -223,7 +227,7 @@ int del_student(int fd, int id)
 int count_db_records(int fd)
 {
     int num_students = 0;
-    char buffer[STUDENT_RECORD_SIZE];
+    student_t *pstudent;
     ssize_t bytes_read;
 
     // set the file descriptor to the beginning of the file
@@ -233,9 +237,10 @@ int count_db_records(int fd)
         return ERR_DB_FILE;
     }
 
-    // read each memory block into the buffer
-    while ((bytes_read = read(fd, buffer, STUDENT_RECORD_SIZE)) > 0) {
-        if (memcmp(buffer, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
+    pstudent = malloc(STUDENT_RECORD_SIZE);
+    // read each memory block into pstudent
+    while ((bytes_read = read(fd, pstudent, STUDENT_RECORD_SIZE)) > 0) {
+        if (memcmp(pstudent, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
             num_students++;
         }
     }
@@ -244,7 +249,8 @@ int count_db_records(int fd)
         printf(M_DB_EMPTY);
         return 0;
     }
-    
+
+    free(pstudent);
     printf(M_DB_RECORD_CNT, num_students);
     return num_students;
 }
@@ -284,7 +290,7 @@ int count_db_records(int fd)
  */
 int print_db(int fd)
 {
-    unsigned char *buffer = malloc(STUDENT_RECORD_SIZE);
+    student_t *pstudent;
     ssize_t bytes_read;
     student_t s;
     int num_students = 0;
@@ -295,9 +301,11 @@ int print_db(int fd)
         return ERR_DB_FILE;
     }
 
-    while ((bytes_read = read(fd, buffer, STUDENT_RECORD_SIZE)) > 0) {
-        if (memcmp(buffer, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
-            memcpy(&s, buffer, STUDENT_RECORD_SIZE);
+    pstudent = malloc(sizeof(student_t));
+
+    while ((bytes_read = read(fd, pstudent, STUDENT_RECORD_SIZE)) > 0) {
+        if (memcmp(pstudent, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
+            memcpy(&s, pstudent, STUDENT_RECORD_SIZE);
             num_students++;
             float calculated_gpa_from_s = (float)s.gpa / 100.0;
             if (num_students == 1) {
@@ -310,6 +318,7 @@ int print_db(int fd)
     if (num_students == 0) {
         printf(M_DB_EMPTY);
     }
+    free(pstudent);
     return NO_ERROR;
 }
 
