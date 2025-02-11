@@ -1,30 +1,29 @@
 1. In this assignment I suggested you use `fgets()` to get user input in the main while loop. Why is `fgets()` a good choice for this application?
 
-    > **Answer**:  _start here_
+    > **Answer**:  The `fgets()` function is a built-in function that reads the input stream's line and the given number of characters and stores the character into a string. It reads the entire line of input including spaces and up to newline characters or until the end of file. If `fgets()` is called when the system is already at the end of the file, a null pointer is returned. In contrast to `scanf()`, `fgets()` allows us to specify a buffer length and prevent buffer overflow attacks. Moreover, it is able to read from any input stream such as `stdin` and files. The `scanf()` which can read different data types, only reads until it encounters whitespace or a new line so for this program, it would not be suitable when a command with arguments is inputted in the command line. 
 
 2. You needed to use `malloc()` to allocte memory for `cmd_buff` in `dsh_cli.c`. Can you explain why you needed to do that, instead of allocating a fixed-size array?
 
-    > **Answer**:  _start here_
-
+    > **Answer**: Using `malloc()` to allocate memory for `cmd_buff` is needed instead of allocating a fixed-size array because `malloc()` allows for flexible memory management when reading the maximum size of the longest command and its arguments. When a user enters an input, the size of it is unknown until it is read so allocating a fixed-size array could potentially lead to unused space in memory. Moreover, after the memory is allocated using `malloc()`, it provides more flexibility to deallocate memory to prevent memory leaks and effectively use resources. 
 
 3. In `dshlib.c`, the function `build_cmd_list(`)` must trim leading and trailing spaces from each command before storing it. Why is this necessary? If we didn't trim spaces, what kind of issues might arise when executing commands in our shell?
 
-    > **Answer**:  _start here_
+    > **Answer**:  The leading and trailing spaces had to be trimmed so the program could correctly split each argument and the command by a common delimiter, a space character. If the spaces were not trimmed, incorrectly parsed commands with the wrong syntax (extra spaces or wrongly included special or extra characters) could be executed and result in a differently ran function. 
 
 4. For this question you need to do some research on STDIN, STDOUT, and STDERR in Linux. We've learned this week that shells are "robust brokers of input and output". Google _"linux shell stdin stdout stderr explained"_ to get started.
 
 - One topic you should have found information on is "redirection". Please provide at least 3 redirection examples that we should implement in our custom shell, and explain what challenges we might have implementing them.
 
-    > **Answer**:  _start here_
-
+    > **Answer**:  The first example is `>` allowing for stdout to redirect to a file and overwrites the file if it exists.  Implementing this function requires us to check if the file exists in our system and effectively writing the output into it especially if the output is large. The second example is using `<` to redirect the standard input (stdin) to read from a file instead of the keyboard. The function has to read the file while considering any new line characters to save as well as when the end of the file is reached. The third example is `>>` which is similar to `>` but appends to the file instead of the overwriting it. The challenge here is to parse through the file content until we can correctly find the end of the content. This may require using a file descriptor along with `lseek()` to keep track of the specific location to read/write/close.
+      
 - You should have also learned about "pipes". Redirection and piping both involve controlling input and output in the shell, but they serve different purposes. Explain the key differences between redirection and piping.
 
-    > **Answer**:  _start here_
+    > **Answer**: Redirection involves connecting a stream to a file and the data flows from the process to the file and vice versa. It also allows for modification of the file descriptors of a single process. However, piping connects the output of one process to another process by creating a communication channel. Ultimately, this allows chaining of commands for sequential data processing.
 
 - STDERR is often used for error messages, while STDOUT is for regular output. Why is it important to keep these separate in a shell?
 
-    > **Answer**:  _start here_
+    > **Answer**:  Keeping STDOUT and STDERR separate is important because they are different data outputs and helps in debugging potential errors. STDOUT produces the output stream whereas STDERR produces the error stream. Moreover, output from STDOUT can be written into a file (via redirection) and we would not want the same for STDERR since it makes it less apparent to the programmer when an error does arise. Due to the purposes of both STDERR and STDOUT, STDOUT is buffered (having registered memory) so output is efficient while STDERR is not buffered so the error messages are sent to the console to be seen as soon as possible.
 
 - How should our custom shell handle errors from commands that fail? Consider cases where a command outputs both STDOUT and STDERR. Should we provide a way to merge them, and if so, how?
 
-    > **Answer**:  _start here_
+    > **Answer**: If an error occurs, the shell should break the execution of the command and display the error message in an error stream. If the command outputs both STDOUT and STDERR then a way to merge them is to display both messages by sending them to the same file using redirection. An example is `./program > output.txt 2>&1` in which the STDOUT result will be written into the output.txt file and the STDERR with file descriptor 2 is redirected to the same place as the location of STDOUT which has file descriptor 1. By merging the two commands, the output from the program from the point in time it ran to when an error was encountered will show more information about the execution and be easier to debug.
