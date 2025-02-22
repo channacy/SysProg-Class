@@ -86,24 +86,13 @@ int exec_local_cmd_loop()
             rc = build_cmd_buff(cmd_buff, &cmd);
             if (rc == -3) {
                 printf("error: limited to %i length size for exe and %i for arg\n", EXE_MAX, ARG_MAX);
-            } else if (rc == 0) {
-                printf("PARSED COMMANDLINE - TOTAL COMMANDS %i\n", 1);
-                printf("<%i>", 1);
-                printf("%s", cmd.argv[0]);
-                if (cmd.argc > 1) {
-                    printf("[");
-                    for (int i = 1; i < cmd.argc; i++) {
-                        printf("%s", cmd.argv[i]);
-                    }
-                    printf("]");
-                } 
-                printf("\n");
+            } else if (rc == -2) {
+                printf("error: limited to %i commands\n", SH_CMD_MAX);
             }
         }
 
         // TODO IMPLEMENT if built-in command, execute builtin logic for exit, cd (extra credit: dragon)
         // the cd command should chdir to the provided directory; if no directory is provided, do nothing
-
         if (strcmp(cmd.argv[0], EXIT_CMD) == 0) {
             return OK;
         } else if (strcmp(cmd.argv[0], "cd") == 0) {
@@ -112,12 +101,22 @@ int exec_local_cmd_loop()
                     perror("cd failed"); 
                 }
             }
-            printf("cd entered");
+        } else {
+            // TODO IMPLEMENT if not built-in command, fork/exec as an external command
+            // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
+            pid_t pid;
+            // Fork a child process
+            if ((pid = fork()) < 0) {
+                perror("fork");
+                return -1;
+            } else if (pid == 0) { // Child process
+                // Execute the command using execvp
+                if (execvp(cmd.argv[0], &cmd.argv[0]) == -1) {
+                    perror("execvp");
+                    exit(EXIT_FAILURE);
+                }
+            }
         }
-
-        // TODO IMPLEMENT if not built-in command, fork/exec as an external command
-        // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
-
     }
 
     return OK;
