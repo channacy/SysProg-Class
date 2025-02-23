@@ -51,8 +51,6 @@ int alloc_cmd_buff(cmd_buff_t *cmd_buff);
 int free_cmd_buff(cmd_buff_t *cmd_buff);
 int clear_cmd_buff(cmd_buff_t *cmd_buff);
 int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff);
-void preprocess_cmd(char *cmd_line);
-void trim_extra_spaces(char *str);
 
 //built in command stuff
 typedef enum {

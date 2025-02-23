@@ -70,9 +70,6 @@ int exec_local_cmd_loop()
         // remove the trailing \n from cmd_buff
         cmd_buff[strcspn(cmd_buff, "\n")] = '\0';
 
-        // preprocess cmd_line
-        preprocess_cmd(cmd_buff);
-
         // if user entered no commands/arguments
         if (cmd_buff[0] == '\0') {
             printf(CMD_WARN_NO_CMD);
@@ -89,108 +86,100 @@ int exec_local_cmd_loop()
             } else if (rc == -2) {
                 printf("error: limited to %i commands\n", SH_CMD_MAX);
             }
-        }
-
-        // TODO IMPLEMENT if built-in command, execute builtin logic for exit, cd (extra credit: dragon)
-        // the cd command should chdir to the provided directory; if no directory is provided, do nothing
-        if (strcmp(cmd.argv[0], EXIT_CMD) == 0) {
-            return OK;
-        } else if (strcmp(cmd.argv[0], "cd") == 0) {
-            if (cmd.argc > 1) {
-                if (chdir(cmd.argv[1]) != 0) {
-                    perror("cd failed"); 
+            else {
+                // TODO IMPLEMENT if built-in command, execute builtin logic for exit, cd (extra credit: dragon)
+                // the cd command should chdir to the provided directory; if no directory is provided, do nothing
+                if (strcmp(cmd.argv[0], EXIT_CMD) == 0) {
+                    return OK;
+                } else if (strcmp(cmd.argv[0], "cd") == 0) {
+                    if (cmd.argc > 1) {
+                        if (chdir(cmd.argv[1]) != 0) {
+                            perror("cd failed"); 
+                        }
+                }
+                } else {
+                    // TODO IMPLEMENT if not built-in command, fork/exec as an external command
+                    // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
+                    pid_t pid;
+                    // Fork a child process
+                    if ((pid = fork()) < 0) {
+                        perror("fork");
+                        return -1;
+                    } else if (pid == 0) { // Child process
+                        // Execute the command using execvp
+                        if (execvp(cmd.argv[0], &cmd.argv[0]) == -1) {
+                            perror("execvp");
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    else {
+                        wait(NULL);
+                    }
                 }
             }
-        } else {
-            // TODO IMPLEMENT if not built-in command, fork/exec as an external command
-            // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
-            pid_t pid;
-            // Fork a child process
-            if ((pid = fork()) < 0) {
-                perror("fork");
-                return -1;
-            } else if (pid == 0) { // Child process
-                // Execute the command using execvp
-                if (execvp(cmd.argv[0], &cmd.argv[0]) == -1) {
-                    perror("execvp");
-                    exit(EXIT_FAILURE);
-                }
-            }
+            free(cmd_buff);
         }
     }
 
     return OK;
-}
-
-void trim_extra_spaces(char *str) {
-    char *end;
-
-    while (isspace((unsigned char)*str)) str++;
-
-    if (*str == 0)
-    return;
-
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
-
-    *(end + 1) = 0;
-}
-
-void preprocess_cmd(char *cmd_line) {
-    char temp[SH_CMD_MAX];
-    int i = 0;
-    int j = 0;
-    int in_quotes = 0;
-
-    trim_extra_spaces(cmd_line);
-
-    while (cmd_line[i] != '\0' && j < SH_CMD_MAX - 1) {
-        if (cmd_line[i] == '"') {
-            in_quotes = !in_quotes;
-            i++;
-            continue;
-        }
-
-        if (!in_quotes && isspace((unsigned char)cmd_line[i])) {
-            if (j > 0 && !isspace((unsigned char)temp[j-1])) {
-                temp[j++] = ' ';
-            }
-        } else {
-            temp[j++] = cmd_line[i];
-        }
-
-        i++;
-    }
-
-    temp[j] = '\0';
-    strcpy(cmd_line, temp); 
 }
 
 int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff) {
-
+    char *start = cmd_line;
+    char *cmd_copy;
     char *token;
-
-    cmd_buff->_cmd_buffer = strdup(cmd_line);
-    cmd_buff->argc = 0; // set to 0 for now
-
-    token = strtok(cmd_line, " "); // get the command
-
-    if (strlen(token) > EXE_MAX) {
+    int in_quotes = 0;
+    
+    // remove leading spaces
+    while (*start && isspace(*start)) {
+        start++;
+    }
+    
+    cmd_copy = strdup(start);
+    if (strlen(cmd_copy) > SH_CMD_MAX) {
         return ERR_CMD_OR_ARGS_TOO_BIG;
     }
-
-    while (token != NULL) {
-        if (cmd_buff->argc < CMD_ARGV_MAX) {
-            cmd_buff->argv[cmd_buff->argc] = token;
-            cmd_buff->argc++;
-        } else {
+    
+    // assign cmd_buffer
+    cmd_buff->_cmd_buffer = cmd_copy;
+    cmd_buff->argc = 0;
+    
+    token = cmd_copy;
+    
+    while (*token) {
+        // skip any spaces between arguments
+        while (*token && isspace(*token)) {
+            token++;
+        }
+        
+        // if token is null, exit out of loop
+        if (!*token) {
+            break;
+        }
+        
+        // if current number of arguments is greater than CMD_MAX
+        if (cmd_buff->argc >= CMD_MAX) {
+            free(cmd_copy);
             return ERR_TOO_MANY_COMMANDS;
         }
-
-        // get the next token
-        token = strtok(NULL, " ");
+        
+        cmd_buff->argv[cmd_buff->argc] = token;
+        
+        // Process the argument and include space between quotes
+        while (*token) {
+            if (*token == '"') {
+                in_quotes = !in_quotes;
+                memmove(token, token + 1, strlen(token)); // remove the quote
+            } else if (isspace(*token) && !in_quotes) {
+                break;
+            }
+            token++;
+        }
+        
+        if (*token) {
+            *token++ = '\0';
+        }
+        cmd_buff->argc++;
     }
-
     return OK;
-
 }
