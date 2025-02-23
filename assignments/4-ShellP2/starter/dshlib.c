@@ -77,6 +77,7 @@ int exec_local_cmd_loop()
             end--;
         }
 
+        // If no command is provided
         if (cmd_buff[0] == '\0')
         {
             printf(CMD_WARN_NO_CMD);
@@ -105,30 +106,34 @@ int exec_local_cmd_loop()
                 }
                 else if (result == 3)
                 {
-                    // external command
+                    // execute external command
                     pid_t pid;
                     if ((pid = fork()) < 0)
                     {
+                        // error with creating child process
                         perror("fork");
-                        return -1;
                     }
                     else if (pid == 0)
                     {
+                        // if fork was sucessful
                         if (execvp(cmd.argv[0], &cmd.argv[0]) == -1)
                         {
+                            // if cannot execute external command, return error code
                             perror("execvp");
-                            exit(EXIT_FAILURE);
+                            // terminate child process with ERR_EXEC_CMD = -6 error code
+                            exit(ERR_EXEC_CMD);
                         }
                     }
                     else
                     {
+                        // wait until the child process terminates
                         wait(NULL);
                     }
                 }
             }
-            free(cmd_buff);
-            free_cmd_buff(&cmd);
-            clear_cmd_buff(&cmd);
+            free(cmd_buff); // free cmd_buff 
+            free_cmd_buff(&cmd); // free cmd_buff of cmd
+            clear_cmd_buff(&cmd); // clear arg and arg count of cmd
         }
     }
 
@@ -172,7 +177,7 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff)
         {
             break;
         }
-        // If current number of arguments is greater than CMD_MAX
+        // If current number of arguments is greater than CMD_MAX, return an error code
         if (cmd_buff->argc >= CMD_MAX)
         {
             free(cmd_copy);
@@ -219,6 +224,7 @@ Built_In_Cmds match_command(const char *input)
 }
 
 Built_In_Cmds exec_built_in_cmd(cmd_buff_t *cmd) {
+    // For now, supports "exit" and "cd"
     if (strcmp(cmd->argv[0], "exit") == 0) {
         return OK_EXIT;
     } else if (strcmp(cmd->argv[0], "cd") == 0) {
