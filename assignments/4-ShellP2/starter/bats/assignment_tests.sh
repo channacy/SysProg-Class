@@ -108,10 +108,12 @@ EOF
 
     # These echo commands will help with debugging and will only print
     #if the test fails
-    echo "Captured stdout:" 
+    echo "Captured stdout:"
     echo "Output: $output"
     echo "Exit Status: $status"
     echo "${stripped_output} -> ${expected_output}"
+    echo "Stripped output: ${stripped_output}"
+    echo "Expected output: ${expected_output}"
 
     # Check exact match
     [ "$stripped_output" = "$expected_output" ]

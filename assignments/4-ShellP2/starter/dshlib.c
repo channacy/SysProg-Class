@@ -51,72 +51,61 @@
  *  Standard Library Functions You Might Want To Consider Using (assignment 2+)
  *      fork(), execvp(), exit(), chdir()
  */
-int exec_local_cmd_loop()
-{
+int exec_local_cmd_loop() {
     char *cmd_buff;
     int rc = 0;
     cmd_buff_t cmd;
 
-    // TODO IMPLEMENT MAIN LOOP
-    while(1){
-        printf("%s", SH_PROMPT);
+    while (1) {
+        printf("%s", SH_PROMPT); // Print the shell prompt
         cmd_buff = (char *)malloc(SH_CMD_MAX * sizeof(char));
-        if (fgets(cmd_buff, ARG_MAX, stdin) == NULL)
-        {
+        if (fgets(cmd_buff, ARG_MAX, stdin) == NULL) {
             printf("\n");
             break;
         }
 
-        // remove the trailing \n from cmd_buff
+        // Remove the trailing newline from cmd_buff
         cmd_buff[strcspn(cmd_buff, "\n")] = '\0';
-
-        // if user entered no commands/arguments
-        if (cmd_buff[0] == '\0') {
-            printf(CMD_WARN_NO_CMD);
-            // return WARN_NO_CMDS;
+        char *end = cmd_buff + strlen(cmd_buff) - 1;
+        while (end >= cmd_buff && isspace(*end)) {
+            *end = '\0';
+            end--;
         }
 
-        // TODO IMPLEMENT parsing input to cmd_buff_t *cmd_buff
-
-        // if user enters command and/or arguments to parse
-        else {
+        if (cmd_buff[0] == '\0') {
+            printf(CMD_WARN_NO_CMD);
+        } else {
             rc = build_cmd_buff(cmd_buff, &cmd);
             if (rc == -3) {
                 printf("error: limited to %i length size for exe and %i for arg\n", EXE_MAX, ARG_MAX);
             } else if (rc == -2) {
                 printf("error: limited to %i commands\n", SH_CMD_MAX);
-            }
-            else {
-                // TODO IMPLEMENT if built-in command, execute builtin logic for exit, cd (extra credit: dragon)
-                // the cd command should chdir to the provided directory; if no directory is provided, do nothing
+            } else {
                 if (strcmp(cmd.argv[0], EXIT_CMD) == 0) {
                     return OK;
                 } else if (strcmp(cmd.argv[0], "cd") == 0) {
                     if (cmd.argc > 1) {
                         if (chdir(cmd.argv[1]) != 0) {
-                            perror("cd failed"); 
+                            perror("cd failed");
                         }
-                }
+                    }
                 } else {
-                    // TODO IMPLEMENT if not built-in command, fork/exec as an external command
-                    // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
                     pid_t pid;
-                    // Fork a child process
                     if ((pid = fork()) < 0) {
                         perror("fork");
                         return -1;
-                    } else if (pid == 0) { // Child process
-                        // Execute the command using execvp
+                    } else if (pid == 0) {
                         if (execvp(cmd.argv[0], &cmd.argv[0]) == -1) {
                             perror("execvp");
                             exit(EXIT_FAILURE);
                         }
-                    }
-                    else {
+                    } else {
                         wait(NULL);
                     }
                 }
             }
+
+
             free(cmd_buff);
         }
     }
@@ -129,57 +118,58 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff) {
     char *cmd_copy;
     char *token;
     int in_quotes = 0;
-    
-    // remove leading spaces
+
+    // Remove leading spaces
     while (*start && isspace(*start)) {
         start++;
     }
-    
+
     cmd_copy = strdup(start);
     if (strlen(cmd_copy) > SH_CMD_MAX) {
         return ERR_CMD_OR_ARGS_TOO_BIG;
     }
-    
-    // assign cmd_buffer
+
+    // Assign cmd_buffer
     cmd_buff->_cmd_buffer = cmd_copy;
     cmd_buff->argc = 0;
-    
+
     token = cmd_copy;
-    
+
     while (*token) {
-        // skip any spaces between arguments
+        // Skip any spaces between arguments
         while (*token && isspace(*token)) {
             token++;
         }
-        
-        // if token is null, exit out of loop
+
+        // If token is null, exit out of loop
         if (!*token) {
             break;
         }
-        
-        // if current number of arguments is greater than CMD_MAX
+
+        // If current number of arguments is greater than CMD_MAX
         if (cmd_buff->argc >= CMD_MAX) {
             free(cmd_copy);
             return ERR_TOO_MANY_COMMANDS;
         }
-        
+
         cmd_buff->argv[cmd_buff->argc] = token;
-        
+
         // Process the argument and include space between quotes
         while (*token) {
             if (*token == '"') {
                 in_quotes = !in_quotes;
-                memmove(token, token + 1, strlen(token)); // remove the quote
+                memmove(token, token + 1, strlen(token)); // Remove the quote
             } else if (isspace(*token) && !in_quotes) {
                 break;
             }
             token++;
         }
-        
+
         if (*token) {
             *token++ = '\0';
         }
         cmd_buff->argc++;
     }
+
     return OK;
 }
