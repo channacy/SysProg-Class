@@ -299,7 +299,7 @@ EOF
     stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
 
     # Expected output with all whitespace removed for easier matching
-    expected_output="cu62dsh2> dsh2> cmd loop returned 0"
+    expected_output="channacyundsh2> dsh2> cmd loop returned 0"
 
     # These echo commands will help with debugging and will only print
     #if the test fails
@@ -312,4 +312,140 @@ EOF
 
     # Assertions
     [ "$status" -eq 0 ]
+}
+
+@test "check hostname" {
+    run ./dsh <<EOF
+hostname
+EOF
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="ubuntudsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
+
+    # Assertions
+    [ "$status" -eq 0 ]
+}
+
+@test "check find after creating file" {
+    run ./dsh <<EOF
+touch test.txt   
+find . -type f -name "*.txt"         
+rm test.txt
+EOF
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="./test.txtdsh2> dsh2> dsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
+
+    # Assertions
+    [ "$status" -eq 0 ]
+}
+
+@test "check find if no matches are found" {
+    run ./dsh <<EOF
+find . -type f -name "*.txt"         
+EOF
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="dsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
+
+    # Assertions
+    [ "$status" -eq 0 ]
+}
+
+@test "It handles rm not executing when not provided an argument" {
+    run "./dsh" <<EOF               
+    rm
+EOF
+
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="rm: missing operandTry 'rm --help' for more information.dsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
+}
+
+@test "Test displaying file permission" {
+    run "./dsh" <<EOF               
+    ls -ld shell_roadmap.md
+EOF
+
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="-rw-r--r-- 1 channacyun channacyun 296 Feb 21 12:01 shell_roadmap.mddsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
+}
+
+@test "Test changing file permission" {
+    run "./dsh" <<EOF
+    chmod 444 shell_roadmap.md              
+    ls -ld shell_roadmap.md
+    chmod 644 shell_roadmap.md
+EOF
+
+    # Strip all whitespace (spaces, tabs, newlines) from the output
+    stripped_output=$(echo "$output" | tr -d '\t\n\r\f\v')
+
+    # Expected output with all whitespace removed for easier matching
+    expected_output="-r--r--r-- 1 channacyun channacyun 296 Feb 21 12:01 shell_roadmap.mddsh2> dsh2> dsh2> dsh2> cmd loop returned 0"
+
+    # These echo commands will help with debugging and will only print
+    #if the test fails
+    echo "Captured stdout:"
+    echo "Output: $output"
+    echo "Exit Status: $status"
+    echo "${stripped_output} -> ${expected_output}"
+    # Check exact match
+    [ "$stripped_output" = "$expected_output" ]
 }
