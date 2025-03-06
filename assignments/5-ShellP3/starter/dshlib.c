@@ -55,7 +55,6 @@
 int exec_local_cmd_loop()
 {
     char *cmd_buff;
-    cmd_buff_t cmd;
     command_list_t clist;
     int rc = 0;
 
@@ -80,7 +79,7 @@ int exec_local_cmd_loop()
             end--;
         }
 
-        // If no command is provided
+        // If no command is provided, then print warning
         if (cmd_buff[0] == '\0')
         {
             printf(CMD_WARN_NO_CMD);
@@ -116,21 +115,22 @@ int exec_local_cmd_loop()
                 }
                 else if (result == 3)
                 {
-                    // if external command does not have piples
-                    if (clist.num == 1)
+                    if (strcmp("|", command) == 0) {
+                        printf("bash: syntax error near unexpected token `|'");
+                    }
+                    // If external command does not have pipes, then just execute that one command
+                    else if (clist.num == 1)
                     {
                         exec_cmd(&clist.commands[0]);
-                        // wait until the child process terminates
-                        wait(NULL);
                     }
                     else
                     {
-                        // external command with piping
+                        // Execute external commands with pipes
                         execute_pipeline(&clist);
-                        // printf("has piping\n");
                     }
                 }
             }
+            
             free_cmd_list(&clist);
             free(cmd_buff);
         }
@@ -145,6 +145,9 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff)
     char *cmd_copy;
     char *arg_token;
     int in_quotes = 0;
+
+    // Initalize fields in cmd_buff
+    memset(cmd_buff, 0, sizeof(cmd_buff_t));
 
     // Remove any leading spaces
     while (*start && isspace(*start))
@@ -197,10 +200,10 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff)
         // Store start of argument
         char *arg_start = arg_token;
 
-        // Process argument, handling quotes
+        // Process argument, handling spaces in quotes and not storing actual quotes
         while (*arg_token)
         {
-            if (*arg_token == '"')
+            if (*arg_token == '"' || *arg_token == '\'')
             {
                 // Remove quote by shifting
                 memmove(arg_token, arg_token + 1, strlen(arg_token));
@@ -208,7 +211,7 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff)
                 continue;
             }
 
-            // End of argument if space and not in quotes
+            // End of argument if character is a space and not in quotes
             if (isspace(*arg_token) && !in_quotes)
             {
                 break;
@@ -223,7 +226,7 @@ int build_cmd_buff(char *cmd_line, cmd_buff_t *cmd_buff)
             *arg_token++ = '\0';
         }
 
-        // Store argument (skip if empty)
+        // Store argument if it is not empty and has at least one character
         if (strlen(arg_start) > 0)
         {
             cmd_buff->argv[cmd_buff->argc++] = arg_start;
@@ -245,10 +248,10 @@ int build_cmd_list(char *cmd_line, command_list_t *clist)
         start++;
     }
 
-    // Reset command list number
+    // Reset command list number to 0
     clist->num = 0;
 
-    // Split commands by '|'
+    // Split commands by pipe character '|'
     cmd_token = strtok(start, "|");
     while (cmd_token != NULL && cmd_index < CMD_MAX)
     {
@@ -275,7 +278,7 @@ int build_cmd_list(char *cmd_line, command_list_t *clist)
         cmd_index++;
         clist->num = cmd_index;
 
-        // Get next command
+        // Get next command using pipe character "|" as delimiter again
         cmd_token = strtok(NULL, "|");
     }
 
@@ -284,10 +287,12 @@ int build_cmd_list(char *cmd_line, command_list_t *clist)
 
 Built_In_Cmds match_command(const char *input)
 {
+    // If command is "cd"
     if (strcmp(input, "cd") == 0)
     {
         return BI_CMD_CD;
     }
+    // If command is "exit"
     else if (strcmp(input, "exit") == 0)
     {
         return BI_CMD_EXIT;
@@ -297,7 +302,7 @@ Built_In_Cmds match_command(const char *input)
 
 Built_In_Cmds exec_built_in_cmd(cmd_buff_t *cmd)
 {
-    // For now, supports "exit" and "cd"
+    // For now, supports built-in commands: "exit", "cd"
     if (strcmp(cmd->argv[0], "exit") == 0)
     {
         return OK_EXIT;
@@ -355,6 +360,7 @@ int free_cmd_list(command_list_t *cmd_lst)
     }
     // reset cmd_list number of commands
     cmd_lst->num = 0;
+    return OK;
 }
 
 int exec_cmd(cmd_buff_t *cmd)
@@ -445,12 +451,22 @@ int execute_pipeline(command_list_t *clist)
                 exit(ERR_EXEC_CMD);
             }
         }
+        else {
+            if (i > 0) {
+                close(pipe_fds[(i-1) * 2]);
+            }
+            if (i < clist->num - 1) {
+                close(pipe_fds[i * 2 + 1]);
+            }
+        }
     }
 
     // parent process closes all the pipe file descriptors
     for (int i = 0; i < 2 * (clist->num - 1); i++)
     {
-        close(pipe_fds[i]);
+        if (fcntl(pipe_fds[i], F_GETFD) != -1) {
+            close(pipe_fds[i]);
+        }
     }
 
     // Wait for all the child processes to complete
